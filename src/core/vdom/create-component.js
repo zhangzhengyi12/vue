@@ -33,6 +33,7 @@ import {
 } from 'weex/runtime/recycle-list/render-component-template'
 
 // inline hooks to be invoked on component VNodes during patch
+// 来了来了 子组件开始实例化了
 const componentVNodeHooks = {
   init (vnode: VNodeWithData, hydrating: boolean): ?boolean {
     if (
@@ -108,13 +109,16 @@ export function createComponent (
   if (isUndef(Ctor)) {
     return
   }
-
   const baseCtor = context.$options._base
 
   // plain options object: turn it into a constructor
+  // 似乎是把一个组件与基本构造函数进行合并
   if (isObject(Ctor)) {
     Ctor = baseCtor.extend(Ctor)
   }
+
+  // 构造函数是这个组件的构造函数
+
 
   // if at this stage it's not a constructor or an async component factory,
   // reject.
@@ -126,6 +130,8 @@ export function createComponent (
   }
 
   // async component
+  // 异步组件不需要立即渲染 可以先挂在那边
+
   let asyncFactory
   if (isUndef(Ctor.cid)) {
     asyncFactory = Ctor
@@ -134,6 +140,7 @@ export function createComponent (
       // return a placeholder node for async component, which is rendered
       // as a comment node but preserves all the raw information for the node.
       // the information will be used for async server-rendering and hydration.
+      // 异步组件不需要
       return createAsyncPlaceholder(
         asyncFactory,
         data,
@@ -151,6 +158,7 @@ export function createComponent (
   resolveConstructorOptions(Ctor)
 
   // transform component v-model data into props & events
+  // 实质上就是自动进行一个绑定 
   if (isDef(data.model)) {
     transformModel(Ctor.options, data)
   }
@@ -165,6 +173,7 @@ export function createComponent (
 
   // extract listeners, since these needs to be treated as
   // child component listeners instead of DOM listeners
+  // 这个是该组件的所有监听器
   const listeners = data.on
   // replace with listeners with .native modifier
   // so it gets processed during parent component patch.

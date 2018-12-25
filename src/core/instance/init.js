@@ -12,10 +12,14 @@ import { extend, mergeOptions, formatComponentName } from '../util/index'
 
 let uid = 0
 
-export function initMixin (Vue: Class<Component>) {
-  Vue.prototype._init = function (options?: Object) {
+//
+// 1 进行选项合并 父子联动 优化
+//
+export function initMixin(Vue: Class<Component>) {
+  Vue.prototype._init = function(options?: Object) {
     const vm: Component = this
     // a uid
+    // 可以通过UID来判断组件是否相同
     vm._uid = uid++
 
     let startTag, endTag
@@ -30,6 +34,7 @@ export function initMixin (Vue: Class<Component>) {
     vm._isVue = true
     // merge options
     if (options && options._isComponent) {
+      // 看起来非根Vue组件的实例化会进行优化处理 似乎是合并过于慢了
       // optimize internal component instantiation
       // since dynamic options merging is pretty slow, and none of the
       // internal component options needs special treatment.
@@ -49,12 +54,12 @@ export function initMixin (Vue: Class<Component>) {
     }
     // expose real self
     vm._self = vm
-    initLifecycle(vm)
-    initEvents(vm)
-    initRender(vm)
+    initLifecycle(vm) // 初始化一些实例上的值
+    initEvents(vm) // 将父组件的事件监听回到绑定子组件的_events上
+    initRender(vm) // 给实例增加上关于render的属性
     callHook(vm, 'beforeCreate')
     initInjections(vm) // resolve injections before data/props
-    initState(vm)
+    initState(vm) // 对Props进行迁移，并对方法 计算数学 data 进行解剖和响应绑定 不过没看懂到底谁来触发
     initProvide(vm) // resolve provide after data/props
     callHook(vm, 'created')
 
@@ -66,18 +71,24 @@ export function initMixin (Vue: Class<Component>) {
     }
 
     if (vm.$options.el) {
+      // mounte 应该会进行渲染 实例化 然后递归进行子组件的这种操作
       vm.$mount(vm.$options.el)
     }
   }
 }
 
-export function initInternalComponent (vm: Component, options: InternalComponentOptions) {
-  const opts = vm.$options = Object.create(vm.constructor.options)
+export function initInternalComponent(
+  vm: Component,
+  options: InternalComponentOptions
+) {
+  const opts = (vm.$options = Object.create(vm.constructor.options))
+  // 这样做可以比动态枚举属性合并更快
   // doing this because it's faster than dynamic enumeration.
   const parentVnode = options._parentVnode
   opts.parent = options.parent
   opts._parentVnode = parentVnode
 
+  // 看来是进行选项的初始化 全部绑定到一个Vue实例的$options中
   const vnodeComponentOptions = parentVnode.componentOptions
   opts.propsData = vnodeComponentOptions.propsData
   opts._parentListeners = vnodeComponentOptions.listeners
@@ -90,7 +101,7 @@ export function initInternalComponent (vm: Component, options: InternalComponent
   }
 }
 
-export function resolveConstructorOptions (Ctor: Class<Component>) {
+export function resolveConstructorOptions(Ctor: Class<Component>) {
   let options = Ctor.options
   if (Ctor.super) {
     const superOptions = resolveConstructorOptions(Ctor.super)
@@ -114,7 +125,7 @@ export function resolveConstructorOptions (Ctor: Class<Component>) {
   return options
 }
 
-function resolveModifiedOptions (Ctor: Class<Component>): ?Object {
+function resolveModifiedOptions(Ctor: Class<Component>): ?Object {
   let modified
   const latest = Ctor.options
   const extended = Ctor.extendOptions
@@ -128,7 +139,7 @@ function resolveModifiedOptions (Ctor: Class<Component>): ?Object {
   return modified
 }
 
-function dedupe (latest, extended, sealed) {
+function dedupe(latest, extended, sealed) {
   // compare latest and sealed to ensure lifecycle hooks won't be duplicated
   // between merges
   if (Array.isArray(latest)) {

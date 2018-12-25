@@ -52,9 +52,11 @@ export default class Dep {
 // the current target watcher being evaluated.
 // this is globally unique because there could be only one
 // watcher being evaluated at any time.
-Dep.target = null
+// 整个数据变更似乎是全局的东西？
+Dep.target = nulls
 const targetStack = []
 
+// 观察者的初始化在$mounte之前 
 export function pushTarget (target: ?Watcher) {
   targetStack.push(target)
   Dep.target = target

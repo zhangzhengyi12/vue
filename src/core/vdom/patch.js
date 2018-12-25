@@ -74,6 +74,8 @@ function createKeyToOldIdx (children, beginIdx, endIdx) {
   return map
 }
 
+// 这里面看上去用了一个插件化的系统 方便Vue移植到各个平台上
+// 这里面似乎是为了这个作用域进行一个命名空间 包裹的非常多
 export function createPatchFunction (backend) {
   let i, j
   const cbs = {}
@@ -129,6 +131,7 @@ export function createPatchFunction (backend) {
 
   let creatingElmInVPre = 0
 
+  // 从未初始化过
   function createElm (
     vnode,
     insertedVnodeQueue,
@@ -148,6 +151,7 @@ export function createPatchFunction (backend) {
     }
 
     vnode.isRootInsert = !nested // for transition enter check
+    // 如果已经创建过了 那么可以直接跳过
     if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
       return
     }
@@ -173,6 +177,7 @@ export function createPatchFunction (backend) {
       vnode.elm = vnode.ns
         ? nodeOps.createElementNS(vnode.ns, tag)
         : nodeOps.createElement(tag, vnode)
+      // 设置样式作用域 其实就是data-v
       setScope(vnode)
 
       /* istanbul ignore if */
@@ -195,6 +200,7 @@ export function createPatchFunction (backend) {
           insert(parentElm, vnode.elm, refElm)
         }
       } else {
+        // 开始创建子元素了 整个基本的el已经建立 并且增加了scopedata
         createChildren(vnode, children, insertedVnodeQueue)
         if (isDef(data)) {
           invokeCreateHooks(vnode, insertedVnodeQueue)
@@ -219,12 +225,19 @@ export function createPatchFunction (backend) {
     if (isDef(i)) {
       const isReactivated = isDef(vnode.componentInstance) && i.keepAlive
       if (isDef(i = i.hook) && isDef(i = i.init)) {
+        // 这里其实就是组件的递归实例化了
         i(vnode, false /* hydrating */)
       }
       // after calling the init hook, if the vnode is a child component
       // it should've created a child instance and mounted it. the child
       // component also has set the placeholder vnode's elm.
       // in that case we can just return the element and be done.
+      // 在初始化之后调用 如果这个vnode是一个子组件
+      // 他应该创建一个子组件的实例并挂载他 
+      // 这个子组件同样需要设置$el
+      // 在这种情况下 我们直接返回这个元素就可以
+      // 其实就是这个组件已经被创建完毕了 那么可以直接挂载
+      // 应该如此
       if (isDef(vnode.componentInstance)) {
         initComponent(vnode, insertedVnodeQueue)
         insert(parentElm, vnode.elm, refElm)
@@ -327,6 +340,7 @@ export function createPatchFunction (backend) {
     if (isDef(i = vnode.fnScopeId)) {
       nodeOps.setStyleScope(vnode.elm, i)
     } else {
+      // 大部分的包装过程出现在这里
       let ancestor = vnode
       while (ancestor) {
         if (isDef(i = ancestor.context) && isDef(i = i.$options._scopeId)) {
@@ -703,8 +717,9 @@ export function createPatchFunction (backend) {
       return node.nodeType === (vnode.isComment ? 8 : 3)
     }
   }
-
+  // 假设微false
   return function patch (oldVnode, vnode, hydrating, removeOnly) {
+    // 摧毁就是直接传入一个空的vnode
     if (isUndef(vnode)) {
       if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
       return
@@ -712,7 +727,8 @@ export function createPatchFunction (backend) {
 
     let isInitialPatch = false
     const insertedVnodeQueue = []
-
+    
+    // 初始化应该会这样 第一次挂载
     if (isUndef(oldVnode)) {
       // empty mount (likely as component), create new root element
       isInitialPatch = true

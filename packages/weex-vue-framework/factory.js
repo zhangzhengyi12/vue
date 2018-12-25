@@ -2647,6 +2647,7 @@ function lifecycleMixin (Vue) {
     vm._vnode = vnode;
     // Vue.prototype.__patch__ is injected in entry points
     // based on the rendering backend used.
+    // VNode To EL 开始了 递归肯定也在这里面进行
     if (!prevVnode) {
       // initial render
       vm.$el = vm.__patch__(

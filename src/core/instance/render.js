@@ -24,6 +24,7 @@ export function initRender (vm: Component) {
   vm.$slots = resolveSlots(options._renderChildren, renderContext)
   vm.$scopedSlots = emptyObject
   // bind the createElement fn to this instance
+  // 绑定创建传输在实例上
   // so that we get proper render context inside it.
   // args order: tag, data, children, normalizationType, alwaysNormalize
   // internal version is used by render functions compiled from templates
@@ -57,9 +58,11 @@ export function renderMixin (Vue: Class<Component>) {
   Vue.prototype.$nextTick = function (fn: Function) {
     return nextTick(fn, this)
   }
-
+  // render 函数在于返回一个完整的VNode对象 这是包含了子组件的
   Vue.prototype._render = function (): VNode {
+    // 这个渲染并没有做递归渲染 只是调用$options.render 来进行template to vnode
     const vm: Component = this
+    // 这个render函数 其实就是
     const { render, _parentVnode } = vm.$options
 
     if (_parentVnode) {
