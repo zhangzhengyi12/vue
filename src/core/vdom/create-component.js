@@ -45,10 +45,15 @@ const componentVNodeHooks = {
       const mountedNode: any = vnode // work around flow
       componentVNodeHooks.prepatch(mountedNode, mountedNode)
     } else {
+      // 一个组件实例就这样被New出来了
       const child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
         activeInstance
       )
+      // new出来就被挂载到这个ele上
+      // 这里就是真正的递归了 因为这个组件会经历 各种初始化 然后调用render函数
+      // 他妈的 到底一个子组件在哪里挂载到父组件上的
+      // 操你妈 这里根本没挂载 只是放到了vnode.$elm 上
       child.$mount(hydrating ? vnode.elm : undefined, hydrating)
     }
   },
@@ -99,6 +104,7 @@ const componentVNodeHooks = {
 
 const hooksToMerge = Object.keys(componentVNodeHooks)
 
+// 这里是通过模板函数调用来生成一个组件的 VNode 
 export function createComponent (
   Ctor: Class<Component> | Function | Object | void,
   data: ?VNodeData,
@@ -229,6 +235,7 @@ export function createComponentInstanceForVnode (
     options.render = inlineTemplate.render
     options.staticRenderFns = inlineTemplate.staticRenderFns
   }
+  // 选项里面的PropsData会被进一步的渲染
   return new vnode.componentOptions.Ctor(options)
 }
 

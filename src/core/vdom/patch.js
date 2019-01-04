@@ -81,7 +81,12 @@ export function createPatchFunction (backend) {
   const cbs = {}
 
   const { modules, nodeOps } = backend
-
+  
+  // 这里其实是对各种更新操作进行一个整合
+  // 模块根据 Vue 平台不同 但是都提供了统一的接口 里面实现了 
+  // ['create', 'activate', 'update', 'remove', 'destroy']
+  // 这五大操作（有些是部分实现）
+  // 并且都是参数都是 oldVNode,newVNode
   for (i = 0; i < hooks.length; ++i) {
     cbs[hooks[i]] = []
     for (j = 0; j < modules.length; ++j) {
@@ -174,6 +179,8 @@ export function createPatchFunction (backend) {
         }
       }
 
+      // 一个子组件其实在这里才会被真正的挂载一个 el 然后继续开始挂载
+
       vnode.elm = vnode.ns
         ? nodeOps.createElementNS(vnode.ns, tag)
         : nodeOps.createElement(tag, vnode)
@@ -237,9 +244,10 @@ export function createPatchFunction (backend) {
       // 这个子组件同样需要设置$el
       // 在这种情况下 我们直接返回这个元素就可以
       // 其实就是这个组件已经被创建完毕了 那么可以直接挂载
-      // 应该如此
+      // 上一步已经成功的实例化了组件
       if (isDef(vnode.componentInstance)) {
         initComponent(vnode, insertedVnodeQueue)
+        // 原来这就是挂载
         insert(parentElm, vnode.elm, refElm)
         if (isTrue(isReactivated)) {
           reactivateComponent(vnode, insertedVnodeQueue, parentElm, refElm)
@@ -273,6 +281,7 @@ export function createPatchFunction (backend) {
     // does not trigger because the inner node's created hooks are not called
     // again. It's not ideal to involve module-specific logic in here but
     // there doesn't seem to be a better way to do it.
+    // 子组件全部 activated
     let innerNode = vnode
     while (innerNode.componentInstance) {
       innerNode = innerNode.componentInstance._vnode
@@ -443,11 +452,13 @@ export function createPatchFunction (backend) {
     }
 
     while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+      // 其实前面这两步就是老的 vnode list 为空 直接结束这次循环了
       if (isUndef(oldStartVnode)) {
         oldStartVnode = oldCh[++oldStartIdx] // Vnode has been moved left
       } else if (isUndef(oldEndVnode)) {
         oldEndVnode = oldCh[--oldEndIdx]
       } else if (sameVnode(oldStartVnode, newStartVnode)) {
+        // 继续对比子组件
         patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx)
         oldStartVnode = oldCh[++oldStartIdx]
         newStartVnode = newCh[++newStartIdx]
@@ -546,7 +557,8 @@ export function createPatchFunction (backend) {
       }
       return
     }
-
+    
+    // 什么情况下会是静态的呢？ 我们拭目以待
     // reuse element for static trees.
     // note we only do this if the vnode is cloned -
     // if the new node is not cloned it means the render functions have been
@@ -560,20 +572,28 @@ export function createPatchFunction (backend) {
       return
     }
 
+
+
     let i
     const data = vnode.data
+    // 只有这个是组件才会触发
+    // prepath 的钩子
     if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
       i(oldVnode, vnode)
     }
 
     const oldCh = oldVnode.children
     const ch = vnode.children
+    // GO ON
     if (isDef(data) && isPatchable(vnode)) {
+      // 这里面把所有的基本监听器啊 attrs 啊 class 啊 这些基本的东西进行了更新 并且如果是
+      // 组件 还会进行组件级别的更新
       for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode)
       if (isDef(i = data.hook) && isDef(i = i.update)) i(oldVnode, vnode)
     }
     if (isUndef(vnode.text)) {
       if (isDef(oldCh) && isDef(ch)) {
+        // 组件进行对比
         if (oldCh !== ch) updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly)
       } else if (isDef(ch)) {
         if (process.env.NODE_ENV !== 'production') {
@@ -597,6 +617,7 @@ export function createPatchFunction (backend) {
   function invokeInsertHook (vnode, queue, initial) {
     // delay insert hooks for component root nodes, invoke them after the
     // element is really inserted
+    // 
     if (isTrue(initial) && isDef(vnode.parent)) {
       vnode.parent.data.pendingInsert = queue
     } else {
@@ -726,6 +747,7 @@ export function createPatchFunction (backend) {
     }
 
     let isInitialPatch = false
+    // 这个插入队列应该是组件级别的  一个组件的整个实例化渲染过程共用一个插入队列 如果发现子组件 那么调用子组件$mount 方法的时候再去嗲用这个 Path
     const insertedVnodeQueue = []
     
     // 初始化应该会这样 第一次挂载
@@ -734,11 +756,14 @@ export function createPatchFunction (backend) {
       isInitialPatch = true
       createElm(vnode, insertedVnodeQueue)
     } else {
+      // 开始看 diff 操作
       const isRealElement = isDef(oldVnode.nodeType)
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
         // patch existing root node
+        // 从根节点启动对比
         patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly)
       } else {
+        // 其实如果进这里就代表 两个 VNODE 基本上是两个 直接进行重建吧 
         if (isRealElement) {
           // mounting to a real element
           // check if this is server-rendered content and if we can perform

@@ -1,0 +1,11 @@
+propsData 从何而来？
+
+从vnode 的组件构造器而来 从 Attrs 上进行读取 并存于 componentOptions 上
+
+// 先注册 watcher 然后通过 get 进行收集依赖 被用到了才会加入到 watcher 里面去 太牛逼了吧
+
+依赖收集为什么是个stack ? 当然是为了递归的 Update  然后不断转换了
+
+原来这个观察者 动态传函数的目的就是为了 当执行这个函数的时候 所有的属性 get 都会被收集到这个 watcher的 deps 中 随后只要更改 都会触发这个传入的函数
+
+macrotask and microtask

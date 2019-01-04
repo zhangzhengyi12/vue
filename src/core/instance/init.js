@@ -35,6 +35,7 @@ export function initMixin(Vue: Class<Component>) {
     // merge options
     if (options && options._isComponent) {
       // 看起来非根Vue组件的实例化会进行优化处理 似乎是合并过于慢了
+      // 什么样的组件会设置这个属性呢？ 其实只要不是根组件递归渲染的时候 都会这样
       // optimize internal component instantiation
       // since dynamic options merging is pretty slow, and none of the
       // internal component options needs special treatment.
@@ -69,7 +70,8 @@ export function initMixin(Vue: Class<Component>) {
       mark(endTag)
       measure(`vue ${vm._name} init`, startTag, endTag)
     }
-
+    
+    // 如果是子组件 其实不会有这个属性
     if (vm.$options.el) {
       // mounte 应该会进行渲染 实例化 然后递归进行子组件的这种操作
       vm.$mount(vm.$options.el)
@@ -89,6 +91,7 @@ export function initInternalComponent(
   opts._parentVnode = parentVnode
 
   // 看来是进行选项的初始化 全部绑定到一个Vue实例的$options中
+  // 其实就是父子组件数据交换
   const vnodeComponentOptions = parentVnode.componentOptions
   opts.propsData = vnodeComponentOptions.propsData
   opts._parentListeners = vnodeComponentOptions.listeners

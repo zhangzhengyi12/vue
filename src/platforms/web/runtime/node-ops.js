@@ -27,6 +27,8 @@ export function createComment (text: string): Comment {
 }
 
 export function insertBefore (parentNode: Node, newNode: Node, referenceNode: Node) {
+  // 如果newNode已经是 parentNode 的子元素 会先被移除
+  
   parentNode.insertBefore(newNode, referenceNode)
 }
 

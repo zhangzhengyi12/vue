@@ -17,6 +17,9 @@ export function extractPropsFromVNodeData (
   // we are only extracting raw values here.
   // validation and default values are handled in the child
   // component itself.
+  // 原来这就是传入 
+
+// 说白了 没用 props 接收的就成为
   const propOptions = Ctor.options.props
   if (isUndef(propOptions)) {
     return
@@ -32,6 +35,7 @@ export function extractPropsFromVNodeData (
           key !== keyInLowerCase &&
           attrs && hasOwn(attrs, keyInLowerCase)
         ) {
+          // props 用下划线分割
           tip(
             `Prop "${keyInLowerCase}" is passed to component ` +
             `${formatComponentName(tag || Ctor)}, but the declared prop name is` +

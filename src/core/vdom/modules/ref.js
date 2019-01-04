@@ -17,6 +17,7 @@ export default {
   }
 }
 
+// 注册 ref
 export function registerRef (vnode: VNodeWithData, isRemoval: ?boolean) {
   const key = vnode.data.ref
   if (!isDef(key)) return

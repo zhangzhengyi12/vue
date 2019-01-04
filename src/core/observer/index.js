@@ -80,6 +80,7 @@ export class Observer {
 
 // helpers
 
+// 这其实就是注入 自定义 Push 的 splice 的两种方式 一个是用原型进行 一个是直接复制到对象的属性中
 /**
  * Augment a target Object or Array by intercepting
  * the prototype chain using __proto__
@@ -112,6 +113,7 @@ export function observe(value: any, asRootData: ?boolean): Observer | void {
     return
   }
   let ob: Observer | void
+  // 这种情况其实是 防止递归重新绑定 
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
   } else if (
@@ -154,9 +156,8 @@ export function defineReactive(
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key]
   }
-
-  // AQ 子OB的意义还不是很明白 无限子查询？
-  // 代表如果有人获取了 那么就会出现了一个子OB？
+   
+  // 继续对child propetry 进行监听
   let childOb = !shallow && observe(val)
   Object.defineProperty(obj, key, {
     enumerable: true,

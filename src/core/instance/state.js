@@ -157,6 +157,7 @@ function initData(vm: Component) {
 
 export function getData(data: Function, vm: Component): any {
   // #7573 disable dep collection when invoking data getters
+  // 呼叫声明周期的时候不需要收集依赖
   pushTarget()
   try {
     return data.call(vm, vm)
@@ -185,6 +186,8 @@ function initComputed(vm: Component, computed: Object) {
 
     if (!isSSR) {
       // create internal watcher for the computed property.
+      // 这一步其实已经完成了观察者的创建 但是还没有进行依赖收集
+      // 因为这是 lazy 的
       watchers[key] = new Watcher(
         vm,
         getter || noop,
@@ -245,6 +248,8 @@ function createComputedGetter(key) {
   return function computedGetter() {
     const watcher = this._computedWatchers && this._computedWatchers[key]
     if (watcher) {
+      // 脏了就代表已经需要更新值了 需要重新获取一下
+      // 反正这个东西就一直切换脏不脏 有依赖数据更新了就开始脏了
       if (watcher.dirty) {
         watcher.evaluate()
       }

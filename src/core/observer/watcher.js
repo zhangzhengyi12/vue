@@ -53,6 +53,10 @@ export default class Watcher {
     if (isRenderWatcher) {
       vm._watcher = this
     }
+    // 一个实例上的观察者还不止一个？
+    // 除了更新观察者以外
+    // 还有计算属性观察者
+    // 还有 watcher 观察者
     vm._watchers.push(this)
     // options
     if (options) {
@@ -79,6 +83,7 @@ export default class Watcher {
     if (typeof expOrFn === 'function') {
       this.getter = expOrFn
     } else {
+      // 这个东西是给 watcher 用的 会生成一个东西来帮助访问 从而进行依赖收集
       this.getter = parsePath(expOrFn)
       if (!this.getter) {
         this.getter = noop
@@ -152,7 +157,8 @@ export default class Watcher {
     this.newDepIds = tmp
     this.newDepIds.clear()
     tmp = this.deps
-    this.deps = this.newDeps
+    this.deps = this.
+    
     this.newDeps = tmp
     this.newDeps.length = 0
   }
@@ -168,6 +174,8 @@ export default class Watcher {
     } else if (this.sync) {
       this.run()
     } else {
+      // 至少 renderwatcher 都会走这里
+      // 异步的去调用 run 并且使用一个 mircro task
       queueWatcher(this)
     }
   }
@@ -192,11 +200,13 @@ export default class Watcher {
         this.value = value
         if (this.user) {
           try {
+            // watcher handler
             this.cb.call(this.vm, value, oldValue)
           } catch (e) {
             handleError(e, this.vm, `callback for watcher "${this.expression}"`)
           }
         } else {
+          // 消费者
           this.cb.call(this.vm, value, oldValue)
         }
       }

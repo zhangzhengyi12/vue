@@ -53,6 +53,7 @@ export function lifecycleMixin (Vue: Class<Component>) {
     const prevEl = vm.$el
     const prevVnode = vm._vnode
     const prevActiveInstance = activeInstance
+    // 这玩意是个全局变量
     activeInstance = vm
     vm._vnode = vnode
     // Vue.prototype.__patch__ is injected in entry points
